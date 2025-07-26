@@ -57,7 +57,10 @@ module perf_counters
     input  logic [NumPorts-1:0][CVA6Cfg.DCACHE_SET_ASSOC-1:0]miss_vld_bits_i,  //For Cache eviction (3ports-LOAD,STORE,PTW)
     input logic i_tlb_flush_i,
     input logic stall_issue_i,  //stall-read operands
-    input logic [31:0] mcountinhibit_i
+    input logic [31:0] mcountinhibit_i,
+    //Oussama
+    output logic mhpm323_active_o
+    //Fin Oussama
 );
 
   typedef logic [11:0] csr_addr_t;
@@ -200,6 +203,12 @@ module perf_counters
       end else if( (addr_i >= csr_addr_t'(riscv::CSR_MHPM_EVENT_3)) && (addr_i < csr_addr_t'(riscv::CSR_MHPM_EVENT_3) + MHPMCounterNum) ) begin
         mhpmevent_d[addr_i-riscv::CSR_MHPM_EVENT_3+1] = data_i;
       end
+      //Detect writing to mhpmcounter3 bit 23
+      if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_3) && data_i[23]) begin
+      mhpm323_active_o = data_i[23];
+      end else if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_3) && !data_i[23]) begin
+      mhpm323_active_o = data_i[23];
+      end 
     end
   end
 
@@ -213,5 +222,6 @@ module perf_counters
       mhpmevent_q       <= mhpmevent_d;
     end
   end
-
 endmodule
+
+

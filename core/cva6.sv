@@ -490,6 +490,9 @@ module cva6
   // CSR
   logic [CVA6Cfg.NrIssuePorts-1:0] csr_valid_id_ex;
   logic csr_hs_ld_st_inst_ex;
+  //Oussama
+  logic mhpm323_active;
+  //Fin Oussama
   // CVXIF
   logic [CVA6Cfg.TRANS_ID_BITS-1:0] x_trans_id_ex_id;
   logic [CVA6Cfg.XLEN-1:0] x_result_ex_id;
@@ -1252,7 +1255,10 @@ module cva6
         .miss_vld_bits_i    (miss_vld_bits),
         .i_tlb_flush_i      (flush_tlb_ctrl_ex),
         .stall_issue_i      (stall_issue),
-        .mcountinhibit_i    (mcountinhibit_csr_perf)
+        .mcountinhibit_i    (mcountinhibit_csr_perf),
+        //Oussama
+        .mhpm323_active_o(mhpm323_active)
+        //Fin Oussama
     );
   end : gen_perf_counter
   else begin : gen_no_perf_counter
