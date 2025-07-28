@@ -40,7 +40,7 @@ void test_write_and_read_mhpm23(void) {
 
 
 void test_write_bit_23_in_mhpm3(void) {
-    printf("\n[Test: Set bit 23 in MHPMEVENT3 (0x323)]\n");
+    printf("\n[Test: Set bit 23 in MHPMEVENT3 ]\n");
     
     uint32_t bit23 = 1 << 23;
 
@@ -51,11 +51,25 @@ void test_write_bit_23_in_mhpm3(void) {
     printf("  MHPMEVENT3 = %08x\n", val);
 }
 
+void test_write_bit_24_25_26_in_mhpm3(void) {
+    printf("\n[Test: Set bits 24:26 in MHPMEVENT3]\n");
+    
+    uint32_t bit2456 = 7 << 24;
+
+    asm volatile("csrw 0x323, %0" :: "r"(bit2456));
+
+    uint32_t val;
+    asm volatile("csrr %0, 0x323" : "=r"(val));
+    printf("  MHPMEVENT3 = %08x\n", val);
+}
+
+
 int main(void) {
     enable_hpm3();
     test_write_bit_23_in_mhpm3();
     test_write_and_read_mhpm23();
-
+    test_write_bit_24_25_26_in_mhpm3();
+    test_write_and_read_mhpm23();
     return 0;
 }
 	
