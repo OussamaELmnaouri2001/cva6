@@ -50,6 +50,10 @@ module wt_dcache
 
     input  logic         mem_rtrn_vld_i,
     input  dcache_rtrn_t mem_rtrn_i,
+     //Oussama
+    input logic[2:0] enclave_id_i,
+    input logic      mhpm_activ_i,
+    //Fin Oussama
     output logic         mem_data_req_o,
     input  logic         mem_data_ack_i,
     output dcache_req_t  mem_data_o
@@ -120,6 +124,7 @@ module wt_dcache
   // miss unit <-> wbuffer
   logic     [         CVA6Cfg.DCACHE_MAX_TX-1:0][               CVA6Cfg.PLEN-1:0] tx_paddr;
   logic     [         CVA6Cfg.DCACHE_MAX_TX-1:0]                                  tx_vld;
+     
 
   // wbuffer <-> memory
   wbuffer_t [     CVA6Cfg.WtDcacheWbufDepth-1:0]                                  wbuffer_data;
@@ -361,7 +366,12 @@ module wt_dcache
       .wr_user_i      (wr_user),
       .wr_data_be_i   (wr_data_be),
       // write buffer forwarding
-      .wbuffer_data_i (wbuffer_data)
+      .wbuffer_data_i (wbuffer_data),
+      //Oussama
+      .enclave_id_i (enclave_id_i),
+      .mhpm_activ_i (mhpm_activ_i)
+
+      //Fin Oussama
   );
 
   ///////////////////////////////////////////////////////

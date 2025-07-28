@@ -492,6 +492,7 @@ module cva6
   logic csr_hs_ld_st_inst_ex;
   //Oussama
   logic mhpm323_active;
+  logic [2:0] enclave_id;
   //Fin Oussama
   // CVXIF
   logic [CVA6Cfg.TRANS_ID_BITS-1:0] x_trans_id_ex_id;
@@ -1257,7 +1258,8 @@ module cva6
         .stall_issue_i      (stall_issue),
         .mcountinhibit_i    (mcountinhibit_csr_perf),
         //Oussama
-        .mhpm323_active_o(mhpm323_active)
+        .mhpm323_active_o(mhpm323_active),
+        .enclave_id_o(enclave_id)
         //Fin Oussama
     );
   end : gen_perf_counter
@@ -1398,7 +1400,9 @@ module cva6
         .noc_resp_i        (noc_resp_i),
         .inval_addr_i      (inval_addr),
         .inval_valid_i     (inval_valid),
-        .inval_ready_o     (inval_ready)
+        .inval_ready_o     (inval_ready),
+        .enclave_id_i      (enclave_id),
+        .mhpm_activ_i      (mhpm323_active)
     );
   end else if (
         CVA6Cfg.DCacheType == config_pkg::HPDCACHE_WT ||

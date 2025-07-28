@@ -73,7 +73,12 @@ module wt_dcache_mem
     input logic [(CVA6Cfg.XLEN/8)-1:0] wr_data_be_i,
 
     // forwarded wbuffer
-    input wbuffer_t [CVA6Cfg.WtDcacheWbufDepth-1:0] wbuffer_data_i
+    input wbuffer_t [CVA6Cfg.WtDcacheWbufDepth-1:0] wbuffer_data_i,
+
+    //Oussama
+    input logic [2:0] enclave_id_i,
+    input logic mhpm_activ_i
+    //Fin Oussama
 );
 
   localparam DCACHE_NUM_BANKS = CVA6Cfg.DCACHE_LINE_WIDTH / CVA6Cfg.XLEN;
@@ -240,7 +245,17 @@ module wt_dcache_mem
   // hit generation
   for (genvar i = 0; i < CVA6Cfg.DCACHE_SET_ASSOC; i++) begin : gen_tag_cmpsel
     // tag comparison of ways >0
-    assign rd_hit_oh_o[i] = (rd_tag == tag_rdata[i]) & rd_vld_bits_o[i] & cmp_en_q;
+    //Oussama
+    //assign rd_hit_oh_o[i] = (rd_tag == tag_rdata[i]) & rd_vld_bits_o[i] & cmp_en_q;
+   assign rd_hit_oh_o[i] = (mhpm_activ_i == 1 && enclave_id_i != 0) ?
+                          ((rd_tag == tag_rdata_only[i]) &&
+                           (enclave_id_tag[i] == enclave_id_i) &&
+                           rd_vld_bits_o[i] &&
+                           cmp_en_q) :
+                          ((rd_tag == tag_rdata_only[i]) &&
+                           rd_vld_bits_o[i] &&
+                           cmp_en_q);
+    //Fin Oussama
     // byte offset mux of ways >0
     assign rdata_cl[i] = bank_rdata[bank_off_q[CVA6Cfg.DCACHE_OFFSET_WIDTH-1:CVA6Cfg.XLEN_ALIGN_BYTES]][i];
     assign ruser_cl[i] = bank_ruser[bank_off_q[CVA6Cfg.DCACHE_OFFSET_WIDTH-1:CVA6Cfg.XLEN_ALIGN_BYTES]][i];
@@ -301,7 +316,11 @@ module wt_dcache_mem
   // memory arrays and regs
   ///////////////////////////////////////////////////////
 
-  logic [CVA6Cfg.DCACHE_TAG_WIDTH:0] vld_tag_rdata[CVA6Cfg.DCACHE_SET_ASSOC-1:0];
+//Oussama
+  logic [CVA6Cfg.DCACHE_TAG_WIDTH + 3:0] vld_tag_rdata[CVA6Cfg.DCACHE_SET_ASSOC-1:0];
+//Fin Oussama
+  //logic [CVA6Cfg.DCACHE_TAG_WIDTH:0] vld_tag_rdata[CVA6Cfg.DCACHE_SET_ASSOC-1:0];
+  
 
   for (genvar k = 0; k < DCACHE_NUM_BANKS; k++) begin : gen_data_banks
     // Data RAM
@@ -325,16 +344,21 @@ module wt_dcache_mem
         .rdata_o(bank_rdata[k])
     );
   end
-
+  
+  //Oussama 
+  logic [CVA6Cfg.DCACHE_TAG_WIDTH-1:0] tag_rdata_only[CVA6Cfg.DCACHE_SET_ASSOC-1:0];
+  logic [2:0] enclave_id_tag[CVA6Cfg.DCACHE_SET_ASSOC-1:0];
+  //Fin Oussama
   for (genvar i = 0; i < CVA6Cfg.DCACHE_SET_ASSOC; i++) begin : gen_tag_srams
-
-    assign tag_rdata[i]     = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH-1:0];
-    assign rd_vld_bits_o[i] = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH];
-
+    //Oussama
+    assign tag_rdata_only[i]   = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH-1:0];
+    assign enclave_id_tag[i]   = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH+2:CVA6Cfg.DCACHE_TAG_WIDTH];
+    assign rd_vld_bits_o[i]    = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH + 3];
+    //Fin Oussama
     // Tag RAM
     sram_cache #(
-        // tag + valid bit
-        .DATA_WIDTH (CVA6Cfg.DCACHE_TAG_WIDTH + 1),
+        // tag + valid bit + Enclave Id
+        .DATA_WIDTH (CVA6Cfg.DCACHE_TAG_WIDTH + 4), //Oussama : + 3
         .BYTE_ACCESS(0),
         .TECHNO_CUT (CVA6Cfg.TechnoCut),
         .NUM_WORDS  (CVA6Cfg.DCACHE_NUM_WORDS)
@@ -345,7 +369,10 @@ module wt_dcache_mem
         .we_i   (vld_we),
         .addr_i (vld_addr),
         .wuser_i('0),
-        .wdata_i({vld_wdata[i], wr_cl_tag_i}),
+        //Oussama
+        //.wdata_i({vld_wdata[i], wr_cl_tag_i}),
+        .wdata_i({vld_wdata[i],enclave_id_i, wr_cl_tag_i}),
+        //Fin Oussama
         .be_i   ('1),
         .ruser_o(),
         .rdata_o(vld_tag_rdata[i])

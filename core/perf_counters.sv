@@ -59,7 +59,8 @@ module perf_counters
     input logic stall_issue_i,  //stall-read operands
     input logic [31:0] mcountinhibit_i,
     //Oussama
-    output logic mhpm323_active_o
+    output logic mhpm323_active_o,
+    output logic [2:0] enclave_id_o
     //Fin Oussama
 );
 
@@ -203,12 +204,19 @@ module perf_counters
       end else if( (addr_i >= csr_addr_t'(riscv::CSR_MHPM_EVENT_3)) && (addr_i < csr_addr_t'(riscv::CSR_MHPM_EVENT_3) + MHPMCounterNum) ) begin
         mhpmevent_d[addr_i-riscv::CSR_MHPM_EVENT_3+1] = data_i;
       end
-      //Detect writing to mhpmcounter3 bit 23
+      //Detect writing to mhpmcounter3 bit 23 Oussama
       if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_3) && data_i[23]) begin
       mhpm323_active_o = data_i[23];
       end else if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_3) && !data_i[23]) begin
       mhpm323_active_o = data_i[23];
       end 
+      // Writing The ID of the enclave on the output enclave_id_o
+      if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_3) && (data_i[24] || data_i[25] || data_i[26])) begin
+      enclave_id_o = data_i[26:24];
+      end else if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_3) && (!data_i[24] && !data_i[25] && !data_i[26])) begin
+      enclave_id_o = data_i[26:24]; 
+      //Fin Oussama
+    end
     end
   end
 
