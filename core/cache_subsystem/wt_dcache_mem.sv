@@ -77,7 +77,8 @@ module wt_dcache_mem
 
     //Oussama
     input logic [2:0] enclave_id_i,
-    input logic mhpm_activ_i
+    input logic mhpm_activ_i,
+    output logic [2:0] rd_enclave_id_tag_o [CVA6Cfg.DCACHE_SET_ASSOC-1:0]
     //Fin Oussama
 );
 
@@ -248,11 +249,11 @@ module wt_dcache_mem
     //Oussama
     //assign rd_hit_oh_o[i] = (rd_tag == tag_rdata[i]) & rd_vld_bits_o[i] & cmp_en_q;
    assign rd_hit_oh_o[i] = (mhpm_activ_i == 1 && enclave_id_i != 0) ?
-                          ((rd_tag == tag_rdata_only[i]) &&
+                          ((rd_tag == tag_rdata[i]) &&
                            (enclave_id_tag[i] == enclave_id_i) &&
                            rd_vld_bits_o[i] &&
                            cmp_en_q) :
-                          ((rd_tag == tag_rdata_only[i]) &&
+                          ((rd_tag == tag_rdata[i]) &&
                            rd_vld_bits_o[i] &&
                            cmp_en_q);
     //Fin Oussama
@@ -346,14 +347,16 @@ module wt_dcache_mem
   end
   
   //Oussama 
-  logic [CVA6Cfg.DCACHE_TAG_WIDTH-1:0] tag_rdata_only[CVA6Cfg.DCACHE_SET_ASSOC-1:0];
   logic [2:0] enclave_id_tag[CVA6Cfg.DCACHE_SET_ASSOC-1:0];
   //Fin Oussama
   for (genvar i = 0; i < CVA6Cfg.DCACHE_SET_ASSOC; i++) begin : gen_tag_srams
     //Oussama
-    assign tag_rdata_only[i]   = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH-1:0];
-    assign enclave_id_tag[i]   = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH+2:CVA6Cfg.DCACHE_TAG_WIDTH];
+    logic [CVA6Cfg.DCACHE_TAG_WIDTH + 3 : 0] tagline;
     assign rd_vld_bits_o[i]    = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH + 3];
+    assign enclave_id_tag[i]   = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH+2:CVA6Cfg.DCACHE_TAG_WIDTH];
+    assign tag_rdata[i]        = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH-1:0];
+    assign rd_enclave_id_tag_o[i] = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH+2:CVA6Cfg.DCACHE_TAG_WIDTH];
+    assign tagline = {vld_wdata[i], enclave_id_i, wr_cl_tag_i};
     //Fin Oussama
     // Tag RAM
     sram_cache #(
@@ -371,7 +374,7 @@ module wt_dcache_mem
         .wuser_i('0),
         //Oussama
         //.wdata_i({vld_wdata[i], wr_cl_tag_i}),
-        .wdata_i({vld_wdata[i],enclave_id_i, wr_cl_tag_i}),
+        .wdata_i(tagline),
         //Fin Oussama
         .be_i   ('1),
         .ruser_o(),

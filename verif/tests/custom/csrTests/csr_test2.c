@@ -38,6 +38,17 @@ void test_write_and_read_mhpm23(void) {
     printf("  MHPM3(23) = %u\n", val);
 }
 
+void test_write_and_read_mhpm24(void) {
+    printf("\n[Test Write MHPMEVENT3(24) directly]\n");
+
+    asm volatile("li t0, 1\n\t"
+                 "csrw 0x324, t0" ::: "t0");
+
+    uint32_t val;
+    asm volatile("csrr %0, 0x324" : "=r"(val));
+    printf("  MHPM3(24) = %u\n", val);
+}
+
 
 void test_write_bit_23_in_mhpm3(void) {
     printf("\n[Test: Set bit 23 in MHPMEVENT3 ]\n");
@@ -52,14 +63,14 @@ void test_write_bit_23_in_mhpm3(void) {
 }
 
 void test_write_bit_24_25_26_in_mhpm3(void) {
-    printf("\n[Test: Set bits 24:26 in MHPMEVENT3]\n");
+    printf("\n[Test: Set bits 23:25 in MHPMEVENT4]\n");
     
-    uint32_t bit2456 = 7 << 24;
+    uint32_t bit2456 = 5 << 23;
 
-    asm volatile("csrw 0x323, %0" :: "r"(bit2456));
+    asm volatile("csrw 0x324, %0" :: "r"(bit2456));
 
     uint32_t val;
-    asm volatile("csrr %0, 0x323" : "=r"(val));
+    asm volatile("csrr %0, 0x324" : "=r"(val));
     printf("  MHPMEVENT3 = %08x\n", val);
 }
 
@@ -67,9 +78,10 @@ void test_write_bit_24_25_26_in_mhpm3(void) {
 int main(void) {
     enable_hpm3();
     test_write_bit_23_in_mhpm3();
-    test_write_and_read_mhpm23();
+    //test_write_and_read_mhpm23();
     test_write_bit_24_25_26_in_mhpm3();
     test_write_and_read_mhpm23();
+    test_write_and_read_mhpm24();
     return 0;
 }
 	

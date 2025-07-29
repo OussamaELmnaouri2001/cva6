@@ -50,7 +50,7 @@ module wt_dcache
 
     input  logic         mem_rtrn_vld_i,
     input  dcache_rtrn_t mem_rtrn_i,
-     //Oussama
+    //Oussama
     input logic[2:0] enclave_id_i,
     input logic      mhpm_activ_i,
     //Fin Oussama
@@ -129,7 +129,9 @@ module wt_dcache
   // wbuffer <-> memory
   wbuffer_t [     CVA6Cfg.WtDcacheWbufDepth-1:0]                                  wbuffer_data;
 
-
+  //Oussama
+  logic [2:0] rd_enclave_id_tag [CVA6Cfg.DCACHE_SET_ASSOC-1:0];
+  //
   ///////////////////////////////////////////////////////
   // miss handling unit
   ///////////////////////////////////////////////////////
@@ -186,7 +188,11 @@ module wt_dcache
       .mem_rtrn_i     (mem_rtrn_i),
       .mem_data_req_o (mem_data_req_o),
       .mem_data_ack_i (mem_data_ack_i),
-      .mem_data_o     (mem_data_o)
+      .mem_data_o     (mem_data_o),
+      //Oussama
+      .enclave_id_i   (enclave_id_i),
+      .mhpm_activ_i   (mhpm_activ_i),
+      .rd_enclave_id_tag (rd_enclave_id_tag)
   );
 
   ///////////////////////////////////////////////////////
@@ -369,8 +375,8 @@ module wt_dcache
       .wbuffer_data_i (wbuffer_data),
       //Oussama
       .enclave_id_i (enclave_id_i),
-      .mhpm_activ_i (mhpm_activ_i)
-
+      .mhpm_activ_i (mhpm_activ_i),
+      .rd_enclave_id_tag_o (rd_enclave_id_tag)
       //Fin Oussama
   );
 

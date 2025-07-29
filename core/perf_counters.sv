@@ -204,17 +204,17 @@ module perf_counters
       end else if( (addr_i >= csr_addr_t'(riscv::CSR_MHPM_EVENT_3)) && (addr_i < csr_addr_t'(riscv::CSR_MHPM_EVENT_3) + MHPMCounterNum) ) begin
         mhpmevent_d[addr_i-riscv::CSR_MHPM_EVENT_3+1] = data_i;
       end
-      //Detect writing to mhpmcounter3 bit 23 Oussama
+      //Detect writing to mhpmcounter3 bit 23 
       if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_3) && data_i[23]) begin
       mhpm323_active_o = data_i[23];
       end else if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_3) && !data_i[23]) begin
       mhpm323_active_o = data_i[23];
       end 
       // Writing The ID of the enclave on the output enclave_id_o
-      if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_3) && (data_i[24] || data_i[25] || data_i[26])) begin
-      enclave_id_o = data_i[26:24];
-      end else if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_3) && (!data_i[24] && !data_i[25] && !data_i[26])) begin
-      enclave_id_o = data_i[26:24]; 
+      if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_4) && (data_i[23] || data_i[24] || data_i[25])) begin
+      enclave_id_o = data_i[25:23];
+      end else if (addr_i == csr_addr_t'(riscv::CSR_MHPM_EVENT_4) && (!data_i[23] && !data_i[24] && !data_i[25])) begin
+      enclave_id_o = data_i[25:23]; 
       //Fin Oussama
     end
     end
