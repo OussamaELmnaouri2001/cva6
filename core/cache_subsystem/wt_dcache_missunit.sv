@@ -213,29 +213,43 @@ module wt_dcache_missunit
   );
 
 //Oussama
- // Politique alternative basée sur enclave_id
-logic [CVA6Cfg.DCACHE_SET_ASSOC-1:0] alt_repl_way_oh;
+// Politique alternative basée sur enclave_id
 logic [CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0] alt_repl_way;
+logic [CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0] our_line_index;
+logic found_our_line, rnd_belongs_to_us;
 
-// Choisir la première ligne invalide ou de la même enclave
+assign rnd_belongs_to_us = (rd_enclave_id_tag[rnd_way] == enclave_id_i);
+// Chercher une ligne de notre enclave (au cas où toutes sont valides)
 always_comb begin
-  alt_repl_way_oh = '0;
+  found_our_line = 1'b0;
+  our_line_index = '0;
+
   for (int i = 0; i < CVA6Cfg.DCACHE_SET_ASSOC; i++) begin
-    if (!miss_vld_bits_i[miss_port_idx][i] || rd_enclave_id_tag[i] == enclave_id_i) begin
-      alt_repl_way_oh[i] = 1'b1;
+    if (rd_enclave_id_tag[i] == enclave_id_i) begin
+      found_our_line = 1'b1;
+      our_line_index = i[CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0];
+      break;
     end
   end
 end
-   assign alt_repl_way = one_hot_to_index(alt_repl_way_oh);
-//Fin Oussama
 
-  //Oussama
+// Politique de remplacement sécurisée (si enclave_id activé)
+always_comb begin
+  if (all_ways_valid) begin
+    alt_repl_way = inv_way;
+  end else if (found_our_line) begin
+    alt_repl_way = our_line_index;
+  end else begin
+    alt_repl_way = rnd_way; // on n’a pas le choix
+  end
+end
+
+
   assign repl_way = (mhpm_activ_i && enclave_id_i != 3'b000) ?
                     alt_repl_way :
                     ((all_ways_valid) ? rnd_way : inv_way);
 
   //Fin Oussama 
-  //assign repl_way             = (all_ways_valid) ? rnd_way : inv_way;
 
   assign mshr_d.size          = (mshr_allocate) ? miss_size_i[miss_port_idx] : mshr_q.size;
   assign mshr_d.paddr         = (mshr_allocate) ? miss_paddr_i[miss_port_idx] : mshr_q.paddr;
@@ -672,14 +686,5 @@ end
   end
 `endif
   //pragma translate_on
-  //Oussama
- function automatic [CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0] one_hot_to_index(input logic [CVA6Cfg.DCACHE_SET_ASSOC-1:0] data);
-  one_hot_to_index = '0;
-  for (int i = 0; i < CVA6Cfg.DCACHE_SET_ASSOC; i++) begin
-    if (data[i]) begin
-      one_hot_to_index = i;
-    end
-  end
-endfunction
-//Fin Oussama
 endmodule  // wt_dcache_missunit
+
