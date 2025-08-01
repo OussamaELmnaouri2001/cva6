@@ -248,14 +248,7 @@ module wt_dcache_mem
     // tag comparison of ways >0
     //Oussama
     //assign rd_hit_oh_o[i] = (rd_tag == tag_rdata[i]) & rd_vld_bits_o[i] & cmp_en_q;
-   assign rd_hit_oh_o[i] = (mhpm_activ_i == 1 && enclave_id_i != 0) ?
-                          ((rd_tag == tag_rdata[i]) &&
-                           (enclave_id_tag[i] == enclave_id_i) &&
-                           rd_vld_bits_o[i] &&
-                           cmp_en_q) :
-                          ((rd_tag == tag_rdata[i]) &&
-                           rd_vld_bits_o[i] &&
-                           cmp_en_q);
+   assign rd_hit_oh_o[i] = (rd_tag == tag_rdata[i]) & (enclave_id_tag[i] == enclave_id_i) & rd_vld_bits_o[i] & cmp_en_q ;
     //Fin Oussama
     // byte offset mux of ways >0
     assign rdata_cl[i] = bank_rdata[bank_off_q[CVA6Cfg.DCACHE_OFFSET_WIDTH-1:CVA6Cfg.XLEN_ALIGN_BYTES]][i];
