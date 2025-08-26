@@ -251,7 +251,7 @@ module wt_dcache_mem
     assign rd_hit_oh_o[i] = (rd_tag == tag_rdata[i]) &
                         rd_vld_bits_o[i] &
                         cmp_en_q &
-                        ((mhpm_activ_i == 1) ? (enclave_id_tag[i] == enclave_id_i) : 1'b1);
+                        ((secure_flag_o[i] == 1) ? (enclave_id_tag[i] == enclave_id_i) : 1'b1);
     //Fin Oussama
     // byte offset mux of ways >0
     assign rdata_cl[i] = bank_rdata[bank_off_q[CVA6Cfg.DCACHE_OFFSET_WIDTH-1:CVA6Cfg.XLEN_ALIGN_BYTES]][i];
@@ -344,20 +344,23 @@ module wt_dcache_mem
   
   //Oussama 
   logic [2:0] enclave_id_tag[CVA6Cfg.DCACHE_SET_ASSOC-1:0];
+  logic [CVA6Cfg.DCACHE_SET_ASSOC-1:0] secure_flag_o;
   //Fin Oussama
   for (genvar i = 0; i < CVA6Cfg.DCACHE_SET_ASSOC; i++) begin : gen_tag_srams
     //Oussama
-    logic [CVA6Cfg.DCACHE_TAG_WIDTH + 3 : 0] tagline;
-    assign rd_vld_bits_o[i]    = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH + 3];
-    assign enclave_id_tag[i]   = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH+2:CVA6Cfg.DCACHE_TAG_WIDTH];
-    assign tag_rdata[i]        = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH-1:0];
-    assign rd_enclave_id_tag_o[i] = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH+2:CVA6Cfg.DCACHE_TAG_WIDTH];
-    assign tagline = {vld_wdata[i], enclave_id_i, wr_cl_tag_i};
+    logic [CVA6Cfg.DCACHE_TAG_WIDTH + 4 : 0] tagline;
+    assign rd_vld_bits_o[i]       = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH + 4];
+    assign secure_flag_o[i]       = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH + 3]; 
+    assign enclave_id_tag[i]      = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH+2:CVA6Cfg.DCACHE_TAG_WIDTH];
+    assign tag_rdata[i]           = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH-1:0];
+    assign rd_enclave_id_tag_o[i] = enclave_id_tag[i];
+
+    assign tagline = { vld_wdata[i], mhpm_activ_i, enclave_id_i, wr_cl_tag_i};
     //Fin Oussama
     // Tag RAM
     sram_cache #(
-        // tag + valid bit + Enclave Id
-        .DATA_WIDTH (CVA6Cfg.DCACHE_TAG_WIDTH + 4), //Oussama : + 3
+        // tag + valid bit + Enclave Id + secure_flag_o
+        .DATA_WIDTH (CVA6Cfg.DCACHE_TAG_WIDTH + 5), //Oussama +5
         .BYTE_ACCESS(0),
         .TECHNO_CUT (CVA6Cfg.TechnoCut),
         .NUM_WORDS  (CVA6Cfg.DCACHE_NUM_WORDS)

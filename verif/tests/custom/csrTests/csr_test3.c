@@ -73,28 +73,19 @@ int main(void) {
 
     int x2 = read_shared(1);
     printf("Read shared_array[1] = %d\n", x2);
-
-    printf("\n=== Phase 2: Activation bit 23 (contre-mesure activée) ===\n");
-    write_bit_23_in_mhpm3();
-
-    write_shared(0, 42);  
-    int y1 = read_shared(0);
-    printf("Read shared_array[0] après activation = %d\n", y1);
-
-    write_shared(1, 99);
-    int y2 = read_shared(1);
-    printf("Read shared_array[1] après activation = %d\n", y2);
-
-    printf("\n=== Phase 3: Activation bits 23:25 dans MHPMEVENT4 (enclave_id filtering) ===\n");
+    
+    printf("\n=== Phase 2: Activation bits 23:25 dans MHPMEVENT4 (enclave_id filtering) + Activation bit 23 (contre-mesure activée) ===\n");
     write_bit_23_24_25_in_mhpm4();
-
+    write_bit_23_in_mhpm3();
+   
     write_shared(2, 77);
     int z = read_shared(2);
     printf("Read shared_array[2] (avec isolation par ID) = %d\n", z);
 
-    printf("\n=== Phase 4: Désactivation de MHPMEVENT3 ===\n");
+    printf("\n=== Phase 3: Désactivation de MHPMEVENT3et4 ===\n");
     write_0_mhpm3();
-
+    write_0_mhpm4();
+    
     int final_read = read_shared(0);
     printf("Final read shared_array[0] (après désactivation) = %d\n", final_read);
 
