@@ -1401,8 +1401,10 @@ module cva6
         .inval_addr_i      (inval_addr),
         .inval_valid_i     (inval_valid),
         .inval_ready_o     (inval_ready),
+        //Oussama
         .enclave_id_i      (enclave_id),
         .mhpm_activ_i      (mhpm323_active)
+        //Fin Oussama
     );
   end else if (
         CVA6Cfg.DCacheType == config_pkg::HPDCACHE_WT ||
