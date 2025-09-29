@@ -77,8 +77,9 @@ module wt_dcache_mem
 
     //Oussama
     input logic [2:0] enclave_id_i,
-    input logic mhpm_activ_i,
-    output logic [2:0] rd_enclave_id_tag_o [CVA6Cfg.DCACHE_SET_ASSOC-1:0]
+    input logic countermeasure_activ_i,
+    output logic [2:0] rd_enclave_id_tag_o [CVA6Cfg.DCACHE_SET_ASSOC-1:0],
+    output logic [CVA6Cfg.DCACHE_SET_ASSOC-1:0]     rd_secure_flag_o   
     //Fin Oussama
 );
 
@@ -237,7 +238,10 @@ module wt_dcache_mem
   logic [CVA6Cfg.DCACHE_OFFSET_WIDTH-CVA6Cfg.XLEN_ALIGN_BYTES-1:0] wr_cl_nc_off;
   logic [                   $clog2(CVA6Cfg.WtDcacheWbufDepth)-1:0] wbuffer_hit_idx;
   logic [                    $clog2(CVA6Cfg.DCACHE_SET_ASSOC)-1:0] rd_hit_idx;
-
+    //Oussama 
+  logic [2:0] enclave_id_tag[CVA6Cfg.DCACHE_SET_ASSOC-1:0];
+  logic [CVA6Cfg.DCACHE_SET_ASSOC-1:0] secure_flag_o;
+  //Fin Oussama
   assign cmp_en_d = (|vld_req) & ~vld_we;
 
   // word tag comparison in write buffer
@@ -342,10 +346,7 @@ module wt_dcache_mem
     );
   end
   
-  //Oussama 
-  logic [2:0] enclave_id_tag[CVA6Cfg.DCACHE_SET_ASSOC-1:0];
-  logic [CVA6Cfg.DCACHE_SET_ASSOC-1:0] secure_flag_o;
-  //Fin Oussama
+
   for (genvar i = 0; i < CVA6Cfg.DCACHE_SET_ASSOC; i++) begin : gen_tag_srams
     //Oussama
     logic [CVA6Cfg.DCACHE_TAG_WIDTH + 4 : 0] tagline;
@@ -353,14 +354,15 @@ module wt_dcache_mem
     assign secure_flag_o[i]       = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH + 3]; 
     assign enclave_id_tag[i]      = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH+2:CVA6Cfg.DCACHE_TAG_WIDTH];
     assign tag_rdata[i]           = vld_tag_rdata[i][CVA6Cfg.DCACHE_TAG_WIDTH-1:0];
+    assign rd_secure_flag_o[i]    = secure_flag_o[i];
     assign rd_enclave_id_tag_o[i] = enclave_id_tag[i];
 
-    assign tagline = { vld_wdata[i], mhpm_activ_i, enclave_id_i, wr_cl_tag_i};
+    assign tagline = { vld_wdata[i], countermeasure_activ_i, enclave_id_i, wr_cl_tag_i};
     //Fin Oussama
     // Tag RAM
     sram_cache #(
         // tag + valid bit + Enclave Id + secure_flag_o
-        .DATA_WIDTH (CVA6Cfg.DCACHE_TAG_WIDTH + 5), //Oussama +5
+        .DATA_WIDTH (CVA6Cfg.DCACHE_TAG_WIDTH + 4), //Oussama +5
         .BYTE_ACCESS(0),
         .TECHNO_CUT (CVA6Cfg.TechnoCut),
         .NUM_WORDS  (CVA6Cfg.DCACHE_NUM_WORDS)

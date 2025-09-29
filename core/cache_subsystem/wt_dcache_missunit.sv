@@ -76,8 +76,9 @@ module wt_dcache_missunit
     output dcache_req_t mem_data_o,
     //Oussama
     input logic [2:0] enclave_id_i,
-    input logic       mhpm_activ_i,
-    input logic [2:0] rd_enclave_id_tag [CVA6Cfg.DCACHE_SET_ASSOC-1:0]
+    input logic       countermeasure_activ_i,
+    input logic [2:0] rd_enclave_id_tag [CVA6Cfg.DCACHE_SET_ASSOC-1:0],
+    input logic [CVA6Cfg.DCACHE_SET_ASSOC-1:0]     rd_secure_flag   
     //Fin Oussama
 );
 
@@ -212,40 +213,59 @@ module wt_dcache_missunit
       .out_o (rnd_way)
   );
 
-//Oussama
-// Politique alternative basée sur enclave_id
-logic [CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0] alt_repl_way;
-logic [CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0] our_line_index;
-logic found_our_line, rnd_belongs_to_us;
+  //Oussama
+  // Déclarations 
+  logic [CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0] alt_repl_way;
+  logic [CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0] our_line_index;
+  logic [CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0] nonsc_line_index;
+  logic found_our_line, found_nonsc_line;
+  logic [CVA6Cfg.DCACHE_SET_ASSOC-1:0] cur_vld_bits;
+  assign cur_vld_bits = miss_vld_bits_i[miss_port_idx];
 
-assign rnd_belongs_to_us = (rd_enclave_id_tag[rnd_way] == enclave_id_i);
-// Chercher une ligne de notre enclave (au cas où toutes sont valides)
-always_comb begin
-  found_our_line = 1'b0;
-  our_line_index = '0;
+  // Recherche prioritaire dans l'ordre demandé
+  always_comb begin
+    // init
+    found_our_line    = 1'b0;
+    our_line_index    = '0;
+    found_nonsc_line  = 1'b0;
+    nonsc_line_index  = '0;
+    alt_repl_way      = '0;
 
-  for (int i = 0; i < CVA6Cfg.DCACHE_SET_ASSOC; i++) begin
-    if (rd_enclave_id_tag[i] == enclave_id_i) begin
-      found_our_line = 1'b1;
-      our_line_index = i[CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0];
-      break;
+    // 1) Priorité aux lignes invalides 
+    if (!all_ways_valid) begin
+      alt_repl_way = inv_way;
+    end else begin
+      // 2) Chercher une ligne appartenant à la même enclave
+      for (int i = 0; i < CVA6Cfg.DCACHE_SET_ASSOC; i++) begin
+        if (rd_enclave_id_tag[i] == enclave_id_i) begin
+          found_our_line = 1'b1;
+          our_line_index = i[CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0];
+          break;
+        end
+      end
+      if (found_our_line) begin
+        alt_repl_way = our_line_index;
+      end else begin
+        // 3) Chercher une ligne non-sécurisée (secure flag == 0)
+        for (int j = 0; j < CVA6Cfg.DCACHE_SET_ASSOC; j++) begin
+          if (cur_vld_bits[j] && (rd_secure_flag[j] == 1'b0)) begin
+            found_nonsc_line = 1'b1;
+            nonsc_line_index = j[CVA6Cfg.DCACHE_SET_ASSOC_WIDTH-1:0];
+            break;
+          end
+        end
+        if (found_nonsc_line) begin
+          alt_repl_way = nonsc_line_index;
+        end else begin
+          // 4) Fallback extrême : aléatoire global (rnd_way)
+          alt_repl_way = rnd_way;
+        end
+      end
     end
   end
-end
 
-// Politique de remplacement sécurisée (si enclave_id activé)
-always_comb begin
-  if (all_ways_valid) begin
-    alt_repl_way = inv_way;
-  end else if (found_our_line) begin
-    alt_repl_way = our_line_index;
-  end else begin
-    alt_repl_way = rnd_way; // on n’a pas le choix
-  end
-end
-
-
-  assign repl_way = (mhpm_activ_i && enclave_id_i != 3'b000) ?
+  // Application finale : sélection selon countermeasure / enclave activé
+  assign repl_way = (countermeasure_activ_i && enclave_id_i != 3'b000) ?
                     alt_repl_way :
                     ((all_ways_valid) ? rnd_way : inv_way);
 
@@ -687,4 +707,3 @@ end
 `endif
   //pragma translate_on
 endmodule  // wt_dcache_missunit
-

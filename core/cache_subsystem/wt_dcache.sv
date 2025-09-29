@@ -52,7 +52,7 @@ module wt_dcache
     input  dcache_rtrn_t mem_rtrn_i,
     //Oussama
     input logic[2:0] enclave_id_i,
-    input logic      mhpm_activ_i,
+    input logic      countermeasure_activ_i,
     //Fin Oussama
     output logic         mem_data_req_o,
     input  logic         mem_data_ack_i,
@@ -131,6 +131,7 @@ module wt_dcache
 
   //Oussama
   logic [2:0] rd_enclave_id_tag [CVA6Cfg.DCACHE_SET_ASSOC-1:0];
+  logic [CVA6Cfg.DCACHE_SET_ASSOC-1:0] rd_secure_flag;
   //
   ///////////////////////////////////////////////////////
   // miss handling unit
@@ -191,8 +192,9 @@ module wt_dcache
       .mem_data_o     (mem_data_o),
       //Oussama
       .enclave_id_i   (enclave_id_i),
-      .mhpm_activ_i   (mhpm_activ_i),
-      .rd_enclave_id_tag (rd_enclave_id_tag)
+      .countermeasure_activ_i   (countermeasure_activ_i),
+      .rd_enclave_id_tag (rd_enclave_id_tag),
+      .rd_secure_flag    (rd_secure_flag)
   );
 
   ///////////////////////////////////////////////////////
@@ -375,8 +377,9 @@ module wt_dcache
       .wbuffer_data_i (wbuffer_data),
       //Oussama
       .enclave_id_i (enclave_id_i),
-      .mhpm_activ_i (mhpm_activ_i),
-      .rd_enclave_id_tag_o (rd_enclave_id_tag)
+      .countermeasure_activ_i (countermeasure_activ_i),
+      .rd_enclave_id_tag_o (rd_enclave_id_tag),
+      .rd_secure_flag_o    (rd_secure_flag)
       //Fin Oussama
   );
 
